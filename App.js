@@ -1,20 +1,58 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View,ActivityIndicator } from 'react-native';
+import Header from './components/Header';
+import Formulario from './components/Formulario';
+import React, { useState } from 'react';
+import axios from 'axios';
+import Cotizacion from './components/Cotizacion';
+import useFuentes from './hooks/useFuentes';
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+    const loaded = useFuentes();
+    const [cotizacion,setCotizacion] = useState({});
+    const [cargando,setCargando] = useState(false);
+
+    const consultarAPIMoneda = async (crypto, moneda) =>{
+        setCargando(true);
+        //Consultar al API para obtener la cotizacion
+        const url = `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${crypto}&tsyms=${moneda}`
+        try {   
+            const response = await axios.get(url);
+            setCotizacion(response.data?.DISPLAY[crypto][moneda]);
+        } catch (error) {
+
+            console.log(error);
+        }
+        finally{
+            setCargando(false);
+        }
+    }
+
+    if(!loaded){
+        return null;
+    }
+
+    return (
+        <ScrollView>
+            <Header />
+
+            <View style={styles.container}>
+                <Formulario consultarAPIMoneda={consultarAPIMoneda}/>
+
+                {cargando ? <ActivityIndicator size={'large'} color={'#5e49e2'} style={{marginTop: 40}}/> : (
+                    <Cotizacion 
+                        cotizacion={cotizacion}
+                    />
+                )}
+            </View>
+
+            <StatusBar style="auto" translucent={false} backgroundColor='#5e49e2'/>
+        </ScrollView>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    container:{
+        padding: '2.5%'
+    }
 });
